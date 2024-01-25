@@ -1,20 +1,14 @@
 {
-  "name": "ws-argo",
+  "name": "nodejs-proxy",
   "version": "1.0.0",
-  "description": "nodejs",
+  "description": "",
   "main": "index.js",
-  "author": "eoovve",
-  "license": "MIT",
-  "private": false,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "ws": "^8.14.2",
-    "axios": "^1.6.2"
-  },
-  "engines": {
-    "node": ">=14"
+    "http-proxy": "latest",
+    "ws": "^8.13.0"
   }
 }
