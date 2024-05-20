@@ -1,38 +1,51 @@
-const net = require('net');
-const WebSocket = require('ws');
-const logcb = (...args) => console.log.bind(this, ...args);
-const errcb = (...args) => console.error.bind(this, ...args);
+const http = require('http');
+const fs = require('fs');
+const exec = require("child_process").exec;
+const subtxt = './app/url.txt'
+const HTTP_PORT = process.env.HTTP_PORT || 3000;
 
-const uuid = (process.env.UUID || 'faacf142dee848c28558641123eb939c').replace(/-/g, '');
-const port = process.env.PORT || 7860;
+// Run start.sh
+fs.chmod("start.sh", 0o777, (err) => {
+  if (err) {
+      console.error(`start.sh empowerment failed: ${err}`);
+      return;
+  }
+  console.log(`start.sh empowerment successful`);
+  const child = exec('bash start.sh');
+  child.stdout.on('data', (data) => {
+      console.log(data);
+  });
+  child.stderr.on('data', (data) => {
+      console.error(data);
+  });
+  child.on('close', (code) => {
+      console.log(`child process exited with code ${code}`);
+      console.clear()
+      console.log(`App is running`);
+  });
+});
 
-const wss = new WebSocket.Server({ port }, logcb('listen:', port));
+// create HTTP server
+const server = http.createServer((req, res) => {
+    if (req.url === '/') {
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Hello world!');
+    }
+    // get-sub
+    if (req.url === '/sub') {
+      fs.readFile(subtxt, 'utf8', (err, data) => {
+        if (err) {
+          console.error(err);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Error reading url.txt' }));
+        } else {
+          res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end(data);
+        }
+      });
+    }
+  });
 
-wss.on('connection', ws => {
-    console.log("on connection");
-
-    ws.once('message', msg => {
-        const [VERSION] = msg;
-        const id = msg.slice(1, 17);
-
-        if (!id.every((v, i) => v === parseInt(uuid.substr(i * 2, 2), 16))) return;
-
-        let i = msg.slice(17, 18).readUInt8() + 19;
-        const targetPort = msg.slice(i, i += 2).readUInt16BE(0);
-        const ATYP = msg.slice(i, i += 1).readUInt8();
-        const host = ATYP === 1 ? msg.slice(i, i += 4).join('.') : // IPV4
-            (ATYP === 2 ? new TextDecoder().decode(msg.slice(i + 1, i += 1 + msg.slice(i, i + 1).readUInt8())) : // domain
-                (ATYP === 3 ? msg.slice(i, i += 16).reduce((s, b, i, a) => (i % 2 ? s.concat(a.slice(i - 1, i + 1)) : s), []).map(b => b.readUInt16BE(0).toString(16)).join(':') : '')); // IPV6
-
-        logcb('conn:', host, targetPort);
-
-        ws.send(new Uint8Array([VERSION, 0]));
-
-        const duplex = WebSocket.createWebSocketStream(ws);
-
-        net.connect({ host, port: targetPort }, function () {
-            this.write(msg.slice(i));
-            duplex.on('error', errcb('E1:')).pipe(this).on('error', errcb('E2:')).pipe(duplex);
-        }).on('error', errcb('Conn-Err:', { host, port: targetPort }));
-    }).on('error', errcb('EE:'));
+server.listen(HTTP_PORT, () => {
+  console.log(`Server is running on port ${HTTP_PORT}`);
 });
