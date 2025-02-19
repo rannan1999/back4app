@@ -1,13 +1,18 @@
 {
-  "name": "node",
-  "version": "1.0.0",
-  "description": "node",
+  "name": "nodejs-argo",
+  "version": "8.8.8",
+  "description": "Thsi is a node project",
   "main": "index.js",
-  "author": "admin",
+  "author": "mingfei",
+  "repository": "https://github.com",
   "license": "MIT",
   "private": false,
   "scripts": {
     "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "latest",
+    "express": "^4.18.2"
   },
   "engines": {
     "node": ">=14"
